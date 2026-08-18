@@ -1,0 +1,12 @@
+[package]
+name = "game-backend-business-metrics"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[[bin]]
+name = "backend-metrics"
+path = "src/backend_metrics.rs"
+
+[dependencies]
+
