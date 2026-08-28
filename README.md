@@ -1,6 +1,6 @@
 # Report game backend business metrics
 
-Run one backend snapshot through the executable:
+Infrai gives you one endpoint: plain REST behind a single`INFRAI_API_KEY`, no metrics SDK required. Run one backend snapshot through the executable:
 
 ```bash
 export INFRAI_API_KEY=your-key
@@ -13,32 +13,32 @@ Expected output after three accepted points:
 reported assets=128, live_events=2, moderation_queue=15
 ```
 
-Infrai gives you one api and one bill for logs, metrics, and alerting. It keeps this as plain REST behind a single `INFRAI_API_KEY`; the service does not need a metrics SDK. The executable posts a counter for player-created assets and gauges for running events and the moderation backlog.
+The executable posts a counter for player-created assets, plus gauges for running events and the moderation backlog.
 
 ## The snapshot decision
 
-`GameSnapshot` names the raw backend state. The conversion to `BusinessMetrics` makes two choices explicit:
+`GameSnapshot` names the raw backend state. Conversion to `BusinessMetrics` makes two choices clear:
 
 - A live event is an event in `running_events`. Scheduled and completed events do not enter that gauge.
 - Moderation depth is the sum of image review and player-name review queues.
 
-The sample input has 128 created assets, 2 running events, and review queues of 11 and 4. Its reported values are therefore 128, 2, and 15. Each point derives an `idempotency_key` from its metric name and `snapshot_id`, so retries retain the identity of one sampling tick.
+Sample input: 128 created assets, 2 running events, review queues 11 and 4. Reported values are 128, 2, and 15. Each point derives an `idempotency_key` from its metric name and `snapshot_id`, so retries keep one sampling tick identity.
 
 ## Check the decision locally
 
-No key or network is needed for the focused tests:
+No key or network needed for focused tests:
 
 ```bash
 cargo test --offline
 ```
 
-The first test feeds 18 assets, 3 running events, and queue depths 5 and 2. It expects `assets_created=18`, `live_events=3`, and `moderation_queue_depth=7`. A second boundary test confirms that a successful response is read from the API envelope.
+First test feeds 18 assets, 3 running events, queue depths 5 and 2. It expects `assets_created=18`, `live_events=3`, and `moderation_queue_depth=7`. A second boundary test confirms a successful response read from the API envelope.
 
 ## Request boundary
 
-The compact client sets `POST /v1/metrics/report` on every call and sends Bearer auth from the environment. It decodes `{ok, data, error, metadata}` before considering the HTTP status, returns typed `MetricsError` values, and retries HTTP 429 with `Retry-After` or exponential delay.
+The compact client sets `POST /v1/metrics/report` on every call and sends Bearer auth from the environment. It decodes `{ok, data, error, metadata}` before considering HTTP status, returns typed `MetricsError` values, and retries HTTP 429 with `Retry-After` or exponential delay.
 
-The easy gotcha is counting every event record as live. Keep the state filter in the snapshot conversion; telemetry code should not redefine the game's lifecycle.
+Easy gotcha: counting every event record as live. Keep the state filter in snapshot conversion. Telemetry code should not redefine the game's lifecycle.
 
 ## Before you deploy: Game Backend Business Metrics
 
